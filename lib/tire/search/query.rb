@@ -60,6 +60,14 @@ module Tire
         @value
       end
 
+      def nested(options={}, &block)
+        @nested = NestedQuery.new(options)
+        block.arity < 1 ? @nested.instance_eval(&block) : block.call(@nested) if block_given?
+        @value[:nested] = @nested.to_hash
+        @value
+      end
+
+
       def all
         @value = { :match_all => {} }
         @value
@@ -119,6 +127,27 @@ module Tire
       end
     end
 
+
+    class NestedQuery
+      def initialize(options={}, &block)
+        @options = options
+        @value = {}
+        block.arity < 1 ? self.instance_eval(&block) : block.call(self) if block_given?
+      end
+      
+      def query(&block)
+        @value[:query] = Query.new(&block).to_hash
+        @value
+      end
+
+      def to_hash
+        @value.update(@options)
+      end
+
+      def to_json
+        to_hash.to_json
+      end
+    end
 
     class FilteredQuery
       def initialize(&block)
